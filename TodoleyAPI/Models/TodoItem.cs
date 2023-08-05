@@ -17,6 +17,6 @@ namespace TodoleyAPI.Models
         public DateTime CreatedDate { get;set; }
         [DataType(DataType.Date)]
         public DateTime DueDate { get;set; }
-        public TodoList TodoItemList { get; set; }  
+        public int TodoItemListId { get; set; }  
     }
 }

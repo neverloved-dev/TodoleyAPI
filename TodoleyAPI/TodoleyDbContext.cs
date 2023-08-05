@@ -9,7 +9,7 @@ namespace TodoleyAPI
         {
 
         }
-        DbSet<TodoItem> TodoItems { get; set; }
-        DbSet<TodoList> TodoList { get; set; }
+        public DbSet<TodoItem> TodoItems { get; set; }
+       public  DbSet<TodoList> TodoList { get; set; }
     }
 }
