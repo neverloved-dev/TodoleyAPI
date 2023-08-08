@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection.Metadata.Ecma335;
+using TodoleyAPI.DTO;
 using TodoleyAPI.Models;
 using TodoleyAPI.Services.TodoItemsService;
 
@@ -12,8 +13,8 @@ namespace TodoleyAPI.Controllers
     [ApiController]
     public class TodoItemsController : ControllerBase
     {
-        private readonly TodoItemsService _todoItemsService;
-        public TodoItemsController(TodoItemsService service)
+        private readonly ITodoItemsService _todoItemsService;
+        public TodoItemsController(ITodoItemsService service)
         {
             _todoItemsService = service;
         }
