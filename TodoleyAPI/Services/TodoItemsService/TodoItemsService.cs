@@ -1,4 +1,5 @@
 ﻿using Microsoft.Identity.Client;
+using TodoleyAPI.DTO;
 using TodoleyAPI.Models;
 
 namespace TodoleyAPI.Services.TodoItemsService
@@ -30,7 +31,7 @@ namespace TodoleyAPI.Services.TodoItemsService
             return _dbContext.TodoItems.Where(x => x.Title == title).ToList();
         }
 
-        public void Add(TodoItem item)
+        public void Add(TodoItemCreateDTO item)
         {
             _dbContext.Add(item);
             _dbContext.SaveChanges();
