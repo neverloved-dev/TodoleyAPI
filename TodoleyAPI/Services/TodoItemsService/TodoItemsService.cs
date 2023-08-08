@@ -31,7 +31,7 @@ namespace TodoleyAPI.Services.TodoItemsService
             return _dbContext.TodoItems.Where(x => x.Title == title).ToList();
         }
 
-        public void Add(TodoItemCreateDTO item)
+        public void Add(TodoItem item)
         {
             _dbContext.Add(item);
             _dbContext.SaveChanges();
