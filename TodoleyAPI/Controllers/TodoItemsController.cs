@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata.Ecma335;
+using TodoleyAPI.Models;
+using TodoleyAPI.Services.TodoItemsService;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,36 +12,60 @@ namespace TodoleyAPI.Controllers
     [ApiController]
     public class TodoItemsController : ControllerBase
     {
-        // GET: api/<TodoItemsController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly TodoItemsService _todoItemsService;
+        public TodoItemsController(TodoItemsService service)
         {
-            return new string[] { "value1", "value2" };
+            _todoItemsService = service;
+        }
+        [HttpGet]
+        public async Task<ActionResult<List<TodoItem>>> Get()
+        {
+            var result =  _todoItemsService.GetAll().ToList();
+            return Ok(result);
         }
 
         // GET api/<TodoItemsController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<ActionResult<TodoItem>> Get(int id)
         {
-            return "value";
+            var result = _todoItemsService.GetById(id);
+            if (result == null)
+            {
+                return NotFound("Record not found");
+            }
+            return Ok(result);
         }
 
         // POST api/<TodoItemsController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult<TodoItem>> Post([FromBody] TodoItem item)
         {
+           if (item == null)
+            {
+                return BadRequest("Body is null");
+            }
+           _todoItemsService.Add(item);
+            return Ok(Get());
         }
 
         // PUT api/<TodoItemsController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<ActionResult<TodoItem>> Put([FromBody] TodoItem item)
         {
+            if(item == null)
+            {
+                return BadRequest("Body is null");
+            }
+            _todoItemsService.Update(item);
+            return Ok(Get());
         }
 
         // DELETE api/<TodoItemsController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<ActionResult<TodoItem>> Delete(int id)
         {
+            _todoItemsService.Delete(id);
+            return Ok(Get());
         }
     }
 }
