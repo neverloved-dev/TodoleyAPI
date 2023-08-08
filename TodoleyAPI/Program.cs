@@ -1,17 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TodoleyAPI;
+using TodoleyAPI.Services.TodoItemsService;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddDataProtection(options => builder.Configuration.GetConnectionString("Default"));
+builder.Services.AddDbContext<TodoleyDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddScoped<ITodoItemsService, TodoItemsService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDataProtection(options => builder.Configuration.GetConnectionString("Default"));
-builder.Services.AddDbContext<TodoleyDbContext>(options=>options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
