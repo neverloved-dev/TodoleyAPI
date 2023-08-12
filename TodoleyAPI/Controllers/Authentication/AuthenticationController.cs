@@ -2,15 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using TodoleyAPI.DTO;
 using TodoleyAPI.Models;
-using System.Linq.Expressions;
-using System.Linq;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using Microsoft.AspNetCore.Identity; 
 using Microsoft.IdentityModel.Tokens; 
-using System.IdentityModel.Tokens.Jwt; 
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Diagnostics.Eventing.Reader;
+using BCrypt.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace TodoleyAPI.Controllers
 {
@@ -18,66 +14,68 @@ namespace TodoleyAPI.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly TodoleyDbContext _context;
-        private readonly ILogger<TodoItemsController> _logger;
+        public static User user = new User();
         private readonly IConfiguration _configuration;
-        private readonly UserManager<ApiUser> _userManager; 
-        private readonly SignInManager<ApiUser> _signInManager; 
-     public AccountController( TodoleyDbContext context, ILogger<TodoItemsController> logger, IConfiguration configuration, UserManager<ApiUser> userManager, SignInManager<ApiUser> signInManager)
+        private readonly TodoleyDbContext _db;
+        public AccountController(IConfiguration configuration, TodoleyDbContext db)
         {
-            _context = context;
-            _logger = logger;
             _configuration = configuration;
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _db = db;
         }
 
         [HttpPost]
-        [ResponseCache(CacheProfileName = "NoCache")]
-        public async Task<ActionResult> Register(RegisterDTO input)
+        public async Task<ActionResult> Register(UserDTO input)
         {
-            if (input == null || _userManager == null)
+            user.Email = input.Email;
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+            user.PasswordHash = passwordHash;
+            List<User> users = new List<User>();
+            if(users.IsNullOrEmpty())
             {
-                return StatusCode(500, "Internal server error");
-            }
-
-            if (ModelState.IsValid)
-            {
-                var newUser = new ApiUser();
-                newUser.UserName = input.UserName;
-                newUser.Email = input.Email;
-
-                var result = await _userManager.CreateAsync(newUser, input.Password);
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User {userName} ({email}) has been created.", newUser.UserName, newUser.Email);
-                    return StatusCode(201, $"User '{newUser.UserName}' has been created.");
-                }
-                else
-                {
-                    var errors = result.Errors.Select(error => error.Description);
-                    _logger.LogError("User creation failed: {errors}", string.Join(", ", errors));
-
-                    var details = new ValidationProblemDetails
-                    {
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                        Status = StatusCodes.Status400BadRequest,
-                        Detail = "User creation failed due to validation errors.",
-                    };
-                    return BadRequest(details);
-                }
+                user.ID = 1;
             }
             else
             {
-                return BadRequest(ModelState);
+                var lastUser = users.Last();
+                user.ID = lastUser.ID + 1;
             }
+            _db.Users.Add(user);
+            _db.SaveChanges();
+            return Ok(user);
         }
     
         [HttpPost]
-        [ResponseCache(CacheProfileName = "NoCache")]
-        public async Task<ActionResult> Login()
+        public ActionResult<User> Login(UserDTO request)
         {
-            throw new NotImplementedException();
+            var user = _db.Users.Where(x=>x.Email == request.Email).FirstOrDefault();
+            if (user == null)
+            {
+                return NotFound("This record does not exist");
+            }
+            if(!BCrypt.Net.BCrypt.Verify(request.Password,user.PasswordHash))
+            {
+                return BadRequest("Wrong password");
+            }
+            var token = CreateToken(user);
+            return Ok(token);
+        }
+
+        private string CreateToken(User user)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Email, user.Email),
+            };
+            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
+                _configuration.GetSection("AppSettings:Token").Value));
+
+            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.Now.AddDays(10),
+                signingCredentials: cred);
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+            return jwt;
         }
     }
  }

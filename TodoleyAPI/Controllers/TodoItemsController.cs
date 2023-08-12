@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection.Metadata.Ecma335;
 using TodoleyAPI.DTO;
@@ -9,6 +10,7 @@ using TodoleyAPI.Services.TodoItemsService;
 
 namespace TodoleyAPI.Controllers
 {
+    [Authorize]
     [Route("api/todo-items")]
     [ApiController]
     public class TodoItemsController : ControllerBase
